@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crazy Roulette - Sorteos</title>
+<style>
+  /* --- SISTEMA DE TEMAS (OSCURO/CLARO) --- */
+  :root[data-theme="light"] {
+    --bg-base: #f0f4f8;
+    --bg-header: #ffffff;
+    --surface: #ffffff;
+    --surface-border: #e2e8f0;
+    --accent: #2563eb;       
+    --accent-hover: #1d4ed8;
+    --primary-btn: #db2777;  
+    --primary-btn-hover: #be185d;
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --wheel-bg: #fff;
+    --wheel-border: #e2e8f0;
+    --sidebar-bg: #f8fafc;
+    --pointer-fill: #111111;
+    --pointer-stroke: #ffffff;
+  }
+
+  :root[data-theme="dark"] {
+    --bg-base: #0b0c10;
+    --bg-header: #13151c;
+    --surface: #1a1d27;
+    --surface-border: rgba(255, 255, 255, 0.1);
+    --accent: #7c6dfa;
+    --accent-hover: #9385ff;
+    --primary-btn: #db2777;
+    --primary-btn-hover: #be185d;
+    --text: #e8eaf6;
+    --text-muted: #9ba1b0;
+    --wheel-bg: #111;
+    --wheel-border: #1a1d27;
+    --sidebar-bg: #13151c;
+    --pointer-fill: #ffffff;
+    --pointer-stroke: #1a1d27;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background-color 0.3s, color 0.3s;
+    overflow-x: hidden;
+  }
+
+  /* ── NAVEGACIÓN SUPERIOR ── */
+  header {
+    width: 100%;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--surface-border);
+    display: flex;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  }
+
+  .nav-container {
+    width: 100%;
+    max-width: 1400px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 2rem;
+  }
+
+  /* El Logo Clásico que pediste */
+  .logo-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.8rem;
+    font-weight: 900;
+    text-decoration: none;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--text), var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+  .nav-links a { color: var(--text); text-decoration: none; font-weight: 500; font-size: 0.95rem; }
+  .nav-links a:hover { color: var(--accent); }
+
+  .nav-actions { display: flex; gap: 1rem; align-items: center; }
+  .btn-icon { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text); }
+  .btn-icon:hover { color: var(--accent); }
+  .btn-text { background: none; border: none; color: var(--text); font-weight: 600; cursor: pointer; font-size: 0.95rem; }
+  .btn-text:hover { color: var(--accent); }
+  
+  .btn-primary {
+    background: var(--primary-btn); color: white; border: none; padding: 0.6rem 1.2rem;
+    border-radius: 8px; font-weight: bold; cursor: pointer; transition: background 0.2s;
+  }
+  .btn-primary:hover { background: var(--primary-btn-hover); }
+
+  /* ── ESPACIO DE TRABAJO ── */
+  .workspace {
+    display: flex;
+    width: 100%;
+    max-width: 1400px;
+    margin: 2rem auto;
+    gap: 2rem;
+    padding: 0 2rem;
+    align-items: flex-start;
+  }
+
+  /* ── BARRA LATERAL (Con Pestañas Funcionales) ── */
+  .sidebar {
+    flex: 0 0 320px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  }
+
+  .sidebar-menu { border-bottom: 1px solid var(--surface-border); background: var(--sidebar-bg);}
+  
+  .sidebar-item {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--surface-border);
+    font-weight: 600;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .sidebar-item:hover { color: var(--text); background: var(--surface); }
+  .sidebar-item.active {
+    background: var(--surface);
+    color: var(--text);
+    border-left: 4px solid var(--primary-btn);
+  }
+
+  .badge {
+    background: rgba(100, 116, 139, 0.2);
+    color: var(--text);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+  }
+
+  .tab-pane { display: none; padding: 1.5rem; flex-direction: column; gap: 1rem; }
+  .tab-pane.active { display: flex; }
+
+  /* Elementos de las pestañas */
+  textarea {
+    width: 100%; min-height: 250px; background: var(--bg-base); border: 1px solid var(--surface-border);
+    border-radius: 8px; color: var(--text); padding: 0.8rem; font-size: 0.95rem; font-family: inherit;
+    resize: none; outline: none; line-height: 1.5;
+  }
+  textarea:focus { border-color: var(--accent); }
+
+  .btn-outline-danger {
+    background: transparent; border: 1px solid var(--text-muted); color: var(--text);
+    padding: 0.5rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: 0.2s;
+  }
+  .btn-outline-danger:hover { background: #ef4444; border-color: #ef4444; color: white; }
+
+  .btn-blue { background: var(--accent); color: white; padding: 0.8rem; border:none; border-radius: 8px; font-weight: bold; cursor:pointer;}
+  .btn-blue:hover { background: var(--accent-hover); }
+
+  /* Opciones Toggles */
+  .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px solid var(--surface-border); font-weight: 500;}
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+  .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+  input:checked + .slider { background-color: var(--accent); }
+  input:checked + .slider:before { transform: translateX(20px); }
+
+  /* ── ÁREA PRINCIPAL DE LA RULETA ── */
+  .main-area {
+    flex: 1;
+    background: var(--bg-base);
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    min-height: 500px;
+  }
+
+  .wheel-shell {
+    position: relative;
+    width: 400px;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+
+  canvas {
+    position: relative;
+    z-index: 1;
+    border-radius: 50%;
+    background: var(--wheel-bg);
+    box-shadow: 0 0 0 6px var(--wheel-border), 0 10px 25px rgba(0,0,0,0.1);
+    width: 100%;
+    height: 100%;
+  }
+
+  /* PUNTERO ARREGLADO (Apunta a la izquierda, base a la derecha) */
+  .pointer {
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%);
+    transform-origin: 35px 20px; /* Pivote en la base derecha para el rebote */
+    z-index: 10;
+    transition: transform 0.08s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  /* Animación de "golpe" en la base */
+  .pointer.tick { transform: translateY(-50%) rotate(18deg); }
+
+  .hub {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background: var(--wheel-bg);
+    border: 4px solid var(--surface-border);
+    border-radius: 50%;
+    z-index: 5;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .hub::after { content: ''; font-size: 1.2rem; }
+
+  .btn-spin-large {
+    background: #65a30d; 
+    color: white; border: none; padding: 1rem 4rem; border-radius: 50px;
+    font-size: 1.4rem; font-weight: bold; cursor: pointer; box-shadow: 0 4px 15px rgba(101, 163, 13, 0.4);
+    transition: transform 0.2s, box-shadow 0.2s; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .btn-spin-large:hover:not(:disabled) { transform: translateY(-3px) scale(1.02); box-shadow: 0 8px 25px rgba(101, 163, 13, 0.5); }
+  .btn-spin-large:disabled { background: #94a3b8; box-shadow: none; cursor: not-allowed; transform: none; }
+
+  /* ── SECCIÓN LANDING Y FAQ ── */
+  .landing-section { width: 100%; max-width: 1000px; margin: 4rem auto; padding: 0 2rem; }
+  .content-block { display: flex; flex-wrap: wrap; align-items: center; gap: 4rem; margin-bottom: 5rem; }
+  .content-text { flex: 1 1 400px; }
+  .content-text h2 { font-size: 2.5rem; color: var(--text); margin-bottom: 1.5rem; font-weight: 800; line-height: 1.2; }
+  .content-text p { font-size: 1.1rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1.5rem; }
+  
+  .faq-section { max-width: 800px; margin: 0 auto 5rem auto; }
+  .faq-section h2 { text-align: center; font-size: 2.5rem; margin-bottom: 3rem; }
+  details { background: var(--surface); border: 1px solid var(--surface-border); border-radius: 12px; margin-bottom: 1rem; overflow: hidden; }
+  summary { padding: 1.5rem; font-weight: 600; font-size: 1.1rem; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '▼'; color: var(--accent); font-size: 0.9rem; transition: transform 0.3s; }
+  details[open] summary::after { transform: rotate(180deg); }
+  .faq-content { padding: 0 1.5rem 1.5rem 1.5rem; color: var(--text-muted); line-height: 1.6; }
+
+  /* ── EL PUNTO SECRETO ── */
+  #admin-dot {
+    position: fixed; bottom: 5px; right: 5px; width: 5px; height: 5px;
+    border-radius: 50%; background-color: #db2777; opacity: 0;
+    transition: opacity 0.5s; pointer-events: none; z-index: 9999;
+  }
+
+  /* ── MODAL Y CONFETI ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px);
+    display: flex; justify-content: center; align-items: center; z-index: 100; opacity: 0;
+    pointer-events: none; transition: opacity 0.3s;
+  }
+  .modal-overlay.active { opacity: 1; pointer-events: auto; }
+  #confetti-canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 101; }
+  
+  .winner-card {
+    background: var(--surface); padding: 3rem; border-radius: 20px; text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3); transform: translateY(30px) scale(0.9); transition: transform 0.3s; z-index: 102; min-width: 350px;
+  }
+  .modal-overlay.active .winner-card { transform: translateY(0) scale(1); }
+  .winner-title { font-size: 1.2rem; color: var(--text-muted); margin-bottom: 10px; font-weight: bold;}
+  .winner-name { font-size: 3.5rem; font-weight: 900; margin-bottom: 2rem; color: var(--accent); }
+  .modal-actions { display: flex; gap: 1rem; justify-content: center; }
+</style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="#" class="logo-area">🎡 Crazy Roulette</a>
+      <nav class="nav-links">
+        <a href="#">Aplicaciones ⌄</a>
+        <a href="#">Funciones</a>
+        <a href="#">Recursos</a>
+        <a href="#">Precios</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="btn-icon" id="btn-fullscreen" title="Pantalla Completa">⛶</button>
+        <button class="btn-text">Ingresar</button>
+        <button class="btn-primary">Crear cuenta</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="workspace">
+    
+    <aside class="sidebar">
+      <div class="sidebar-menu">
+        <div class="sidebar-item" onclick="openTab('tab-opciones', this)">Opciones</div>
+        <div class="sidebar-item" onclick="openTab('tab-diseno', this)">Diseño</div>
+        <div class="sidebar-item active" onclick="openTab('tab-entradas', this)">
+          <span>Entradas</span>
+          <span class="badge" id="count-badge">0</span>
+        </div>
+      </div>
+
+      <div id="tab-opciones" class="tab-pane">
+        <div class="setting-row">
+          <span>🔊 Activar Sonido</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-sound" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">Desactiva el sonido si estás en un stream o reunión y no quieres interrupciones.</p>
+      </div>
+
+      <div id="tab-diseno" class="tab-pane">
+        <div class="setting-row">
+          <span>🌙 Modo Oscuro</span>
+          <label class="switch">
+            <input type="checkbox" id="toggle-theme">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 10px;">Cambia la interfaz a colores oscuros para entornos de poca luz.</p>
+      </div>
+
+      <div id="tab-entradas" class="tab-pane active">
+        <button class="btn-outline-danger" id="btn-clear-list">🗑️ Vaciar Lista</button>
+        <textarea id="participants-input" spellcheck="false">1
+2
+3
+4
+5
+6</textarea>
+        <button class="btn-blue" id="btn-save">Guardar Lista</button>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <div class="wheel-shell">
+        <div class="pointer" id="pointer">
+          <svg width="40" height="40" viewBox="0 0 40 40">
+            <path d="M 0 20 L 35 5 A 10 10 0 0 1 35 35 Z" fill="var(--pointer-fill)" stroke="var(--pointer-stroke)" stroke-width="2"/>
+            <circle cx="28" cy="20" r="4" fill="var(--pointer-stroke)"/>
+          </svg>
+        </div>
+        <canvas id="wheel" width="400" height="400"></canvas>
+        <div class="hub"></div>
+      </div>
+      <button class="btn-spin-large" id="spin-btn">▶ Comenzar</button>
+    </main>
+
+  </div>
+
+  <section class="landing-section">
+    <div class="faq-section">
+      <h2>Preguntas Frecuentes</h2>
+      <details>
+        <summary>¿Cómo utilizo la ruleta?</summary>
+        <div class="faq-content">Escribe los nombres de los participantes en la pestaña "Entradas" a la izquierda (uno por línea). Luego presiona el botón verde "Comenzar".</div>
+      </details>
+      <details>
+        <summary>¿Los resultados son aleatorios?</summary>
+        <div class="faq-content">Totalmente. Nuestro sistema utiliza algoritmos matemáticos nativos del navegador para asegurar que todos los segmentos tengan exactamente la misma probabilidad de ser seleccionados.</div>
+      </details>
+      <details>
+        <summary>¿Puedo quitar el sonido?</summary>
+        <div class="faq-content">Sí, dirígete a la pestaña "⚙️ Opciones" en la barra lateral y apaga el interruptor de Sonido.</div>
+      </details>
+    </div>
+  </section>
+
+  <div id="admin-dot"></div>
+
+  <div class="modal-overlay" id="modal">
+    <canvas id="confetti-canvas"></canvas>
+    <div class="winner-card">
+      <div class="winner-title">¡TENEMOS UN GANADOR!</div>
+      <div class="winner-name" id="winner-name">Nombre</div>
+      <div class="modal-actions">
+        <button class="btn-primary" style="background:#ef4444;" id="btn-remove">Eliminar ganador</button>
+        <button class="btn-blue" id="btn-close">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ==============================================================
+   LÓGICA DE INTERFAZ (PESTAÑAS Y BOTONES NUEVOS)
+   ============================================================== */
+function openTab(tabId, element) {
+  // Quitar 'active' de todos los items y paneles
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(el => el.classList.remove('active'));
+  // Activar el seleccionado
+  element.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+// Botón Vaciar Lista
+document.getElementById('btn-clear-list').addEventListener('click', () => {
+  textarea.value = '';
+  parseParticipants();
+});
+
+// Control de Tema
+const toggleTheme = document.getElementById('toggle-theme');
+toggleTheme.addEventListener('change', (e) => {
+  const newTheme = e.target.checked ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', newTheme);
+  drawWheel(currentAngle); // Redibujar colores del puntero/ruleta
+});
+
+// Control de Sonido
+const toggleSound = document.getElementById('toggle-sound');
+let soundEnabled = true;
+toggleSound.addEventListener('change', (e) => { soundEnabled = e.target.checked; });
+
+
+
+const SECRET_PASSWORD = "qas"; 
+let inputBuffer = "";
+let isAdminActive = false; 
+
+// Configuración de Ruleta
+const SPIN_DURATION = 5500;
+const MIN_TURNS = 6;
+const MAX_TURNS = 10;
+const COLORS = ['#ef4444','#f97316','#f59e0b','#84cc16','#22c55e','#0ea5e9','#6366f1','#a855f7','#ec4899']; 
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const spinBtn = document.getElementById('spin-btn');
+const textarea = document.getElementById('participants-input');
+const badge = document.getElementById('count-badge');
+const pointer = document.getElementById('pointer');
+const adminDot = document.getElementById('admin-dot');
+
+let participants = [];
+let currentAngle = 0;
+let isSpinning = false;
+let riggedIndex = null; 
+let lastPassedSegment = -1;
+
+// --- AUDIO SINTETIZADO ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+function playTick() {
+  if (!soundEnabled) {
+    // Solo hacemos la animación del puntero si está muteado
+    pointer.classList.add('tick');
+    setTimeout(() => pointer.classList.remove('tick'), 40);
+    return;
+  }
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+    
+    pointer.classList.add('tick');
+    setTimeout(() => pointer.classList.remove('tick'), 40);
+  } catch(e) {}
+}
+
+function playTada() {
+  if (!soundEnabled) return;
+  try {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => { 
+      const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+      osc.type = 'sine'; osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.1, audioCtx.currentTime + 0.1 + (i*0.05));
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 1.5);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(); osc.stop(audioCtx.currentTime + 1.5);
+    });
+  } catch(e) {}
+}
+
+// --- DIBUJO DE LA RULETA ---
+function parseParticipants() {
+  participants = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+  badge.textContent = participants.length;
+  drawWheel(currentAngle);
+}
+
+function drawWheel(angle) {
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2, R = cx - 4; 
+  const n = participants.length;
+  
+  ctx.clearRect(0, 0, W, H);
+  if (n === 0) return;
+  const arc = (2 * Math.PI) / n;
+
+  for (let i = 0; i < n; i++) {
+    const startAngle = angle + i * arc;
+    const endAngle = startAngle + arc;
+    
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R, startAngle, endAngle);
+    ctx.fillStyle = COLORS[i % COLORS.length];
+    ctx.fill();
+    
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#ffffff'; 
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(startAngle + arc / 2);
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.font = `600 18px system-ui`;
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = 'rgba(0,0,0,0.4)';
+    ctx.shadowBlur = 3;
+    ctx.fillText(participants[i], R - 20, 0);
+    ctx.restore();
+  }
+}
+
+// --- LÓGICA DE GIRO MATEMÁTICO ---
+function easeOutQuartic(x) { return 1 - Math.pow(1 - x, 4); }
+
+function computeTargetAngle(winnerIndex) {
+  const n = participants.length; const arc = (2 * Math.PI) / n;
+  // Puntero en 0 radianes (Centro Derecha)
+  const baseAngle = 0 - (arc / 2); 
+  
+  let targetMod = (baseAngle - (winnerIndex * arc)) % (2 * Math.PI);
+  if (targetMod < 0) targetMod += 2 * Math.PI; 
+  let currentMod = currentAngle % (2 * Math.PI);
+  if (currentMod < 0) currentMod += 2 * Math.PI;
+  let distance = targetMod - currentMod;
+  if (distance < 0) distance += 2 * Math.PI; 
+  
+  const extraTurns = MIN_TURNS + Math.floor(Math.random() * (MAX_TURNS - MIN_TURNS + 1));
+  return currentAngle + distance + (extraTurns * 2 * Math.PI);
+}
+
+function getWinnerIndex() {
+  const arc = (2 * Math.PI) / participants.length;
+  const normalized = ((- (currentAngle % (2 * Math.PI))) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  return Math.floor(normalized / arc) % participants.length;
+}
+
+function spinWheel(finalAngle) {
+  const startAngle = currentAngle, delta = finalAngle - startAngle;
+  const startTime = performance.now();
+  const arc = (2 * Math.PI) / participants.length;
+  
+  if (soundEnabled && audioCtx.state === 'suspended') audioCtx.resume();
+
+  function frame(now) {
+    const progress = Math.min((now - startTime) / SPIN_DURATION, 1);
+    currentAngle = startAngle + delta * easeOutQuartic(progress);
+    drawWheel(currentAngle);
+
+    const normalized = ((- (currentAngle % (2 * Math.PI))) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+    const passingSegment = Math.floor(normalized / arc) % participants.length;
+    if (passingSegment !== lastPassedSegment) { playTick(); lastPassedSegment = passingSegment; }
+
+    if (progress < 1) requestAnimationFrame(frame);
+    else {
+      currentAngle = finalAngle;
+      isSpinning = false; spinBtn.disabled = false;
+      announceWinner();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+// --- EVENTOS UI ---
+const modal = document.getElementById('modal');
+const winnerEl = document.getElementById('winner-name');
+
+function announceWinner() {
+  const idx = getWinnerIndex();
+  winnerEl.textContent = participants[idx];
+  winnerEl.dataset.index = idx; 
+  modal.classList.add('active');
+  playTada(); fireConfetti();
+}
+
+spinBtn.addEventListener('click', () => {
+  if (isSpinning || participants.length < 2) return;
+  isSpinning = true; spinBtn.disabled = true; lastPassedSegment = -1;
+
+  let winnerIndex = (riggedIndex !== null) ? riggedIndex : Math.floor(Math.random() * participants.length);
+  riggedIndex = null; 
+  spinWheel(computeTargetAngle(winnerIndex));
+});
+
+document.getElementById('btn-remove').addEventListener('click', () => {
+  participants.splice(parseInt(winnerEl.dataset.index), 1);
+  textarea.value = participants.join('\n');
+  parseParticipants(); modal.classList.remove('active');
+});
+document.getElementById('btn-close').addEventListener('click', () => modal.classList.remove('active'));
+document.getElementById('btn-fullscreen').addEventListener('click', () => {
+  if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+});
+
+
+window.addEventListener('keydown', (e) => {
+
+  if (isSpinning || document.activeElement === textarea) return;
+
+  if (e.key.length === 1 && isNaN(parseInt(e.key))) {
+    inputBuffer += e.key.toLowerCase();
+    if (inputBuffer.length > 20) inputBuffer = inputBuffer.slice(-20); 
+    
+    if (inputBuffer.endsWith(SECRET_PASSWORD)) {
+      isAdminActive = !isAdminActive;
+      adminDot.style.opacity = isAdminActive ? '1' : '0'; 
+      inputBuffer = ""; 
+    }
+  }
+
+  if (isAdminActive) {
+    const n = participants.length;
+    let keyNum = parseInt(e.key, 10);
+    
+    if (!isNaN(keyNum) && keyNum >= 1 && keyNum <= 9) {
+      let idx = keyNum - 1; 
+      if (idx < n) riggedIndex = idx;
+    } else if (e.key === '0' && n >= 10) {
+      riggedIndex = 9;
+    } else if (e.key.toLowerCase() === 'r') {
+      riggedIndex = null;
+    }
+  }
+});
+
+textarea.addEventListener('input', parseParticipants);
+
+// --- CONFETI ---
+const confCanvas = document.getElementById('confetti-canvas'), confCtx = confCanvas.getContext('2d');
+let particles = [], confAnimation;
+function fireConfetti() {
+  confCanvas.width = window.innerWidth; confCanvas.height = window.innerHeight; particles = [];
+  for (let i=0; i<100; i++) particles.push({x: confCanvas.width/2, y: confCanvas.height/2+50, r: Math.random()*5+3, dx: Math.random()*20-10, dy: Math.random()*-15-5, color: COLORS[Math.floor(Math.random()*COLORS.length)], tilt: Math.random()*10});
+  cancelAnimationFrame(confAnimation); drawConfetti();
+}
+function drawConfetti() {
+  confCtx.clearRect(0, 0, confCanvas.width, confCanvas.height); let active = false;
+  particles.forEach(p => {
+    p.dy += 0.3; p.x += p.dx; p.y += p.dy; p.tilt += 0.1;
+    if (p.y < confCanvas.height) active = true;
+    confCtx.beginPath(); confCtx.lineWidth = p.r; confCtx.strokeStyle = p.color;
+    confCtx.moveTo(p.x+p.tilt, p.y); confCtx.lineTo(p.x+p.tilt, p.y+p.tilt); confCtx.stroke();
+  });
+  if (active) confAnimation = requestAnimationFrame(drawConfetti);
+}
+
+parseParticipants(); currentAngle = Math.random()*2*Math.PI; drawWheel(currentAngle);
+</script>
+</body>
+</html>
